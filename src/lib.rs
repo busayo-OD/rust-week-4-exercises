@@ -144,8 +144,10 @@ pub struct CliArgs {
 // Simple CLI argument parser
 pub fn parse_cli_args(args: &[String]) -> Result<CliCommand, BitcoinError> {
     // TODO: Match args to "send" or "balance" commands and parse required arguments
+    let mut all_args = vec!["bitcoin-cli".to_string()];
+    all_args.extend_from_slice(args);
     let cli_args =
-        CliArgs::try_parse_from(args).map_err(|e| BitcoinError::ParseError(e.to_string()))?;
+        CliArgs::try_parse_from(all_args).map_err(|e| BitcoinError::ParseError(e.to_string()))?;
     Ok(cli_args.cli_command)
 }
 
