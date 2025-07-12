@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use std::str::FromStr;
+// use std::str::FromStr;
 use thiserror::Error;
 
 // Custom errors for Bitcoin operations
@@ -153,11 +153,11 @@ pub fn parse_cli_args(args: &[String]) -> Result<CliCommand, BitcoinError> {
 
 #[derive(Subcommand, Debug)]
 pub enum CliCommand {
-    Send { 
+    Send {
         #[arg(help = "Amount")]
         amount: u64,
-        #[arg(help = "Address")] 
-        address: String 
+        #[arg(help = "Address")]
+        address: String,
     },
     Balance,
 }
@@ -169,7 +169,30 @@ impl TryFrom<&[u8]> for LegacyTransaction {
     fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
         // TODO: Parse binary data into a LegacyTransaction
         // Minimum length is 10 bytes (4 version + 4 inputs count + 4 lock_time)
-        todo!()
+        if data.len() < 10 {
+            return Err(BitcoinError::InvalidTransaction);
+        }
+
+        let version = i32::from_le_bytes(
+            data[0..4]
+                .try_into()
+                .map_err(|_| BitcoinError::InvalidTransaction)?,
+        );
+
+        let inputs_count = u32::from_le_bytes(
+            data[4..8]
+                .try_into()
+                .map_err(|_| BitcoinError::InvalidTransaction)?,
+        ) as usize;
+
+        let inputs = Vec::with_capacity(inputs_count);
+
+        Ok(LegacyTransaction {
+            version,
+            inputs,
+            outputs: Vec::new(),
+            lock_time: 0,
+        })
     }
 }
 
@@ -177,6 +200,9 @@ impl TryFrom<&[u8]> for LegacyTransaction {
 impl BitcoinSerialize for LegacyTransaction {
     fn serialize(&self) -> Vec<u8> {
         // TODO: Serialize only version and lock_time (simplified)
-        todo!()
+        let mut bytes = Vec::new();
+        bytes.extend(&self.version.to_le_bytes());
+        bytes.extend(&self.lock_time.to_le_bytes());
+        bytes
     }
 }
